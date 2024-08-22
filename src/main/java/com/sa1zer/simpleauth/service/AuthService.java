@@ -28,8 +28,11 @@ public class AuthService {
     @Transactional(readOnly = true)
     public AuthResponse auth(AuthRequest authRequest) {
         var user = userRepo.findByLoginOrEmail(authRequest.login(), authRequest.login());
-        if(user.isEmpty() || !passwordEncoder.matches(authRequest.password(), user.get().getPassword()))
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Wrong password or email");
+        if(user.isEmpty())
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
+
+        if(!passwordEncoder.matches(authRequest.password(), user.get().getPassword()))
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Wrong password");
 
         return new AuthResponse(jwtService.generateToken(user.get()));
     }

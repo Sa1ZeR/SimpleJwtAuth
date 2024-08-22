@@ -69,6 +69,48 @@ class AuthControllerTest {
     }
 
     @Test
+    void auth_incorrect() throws Exception {
+        var user = userRepo.save(User.builder()
+                .email("test@mail.ru")
+                .login("Sa1ZeR_")
+                .password(passwordEncoder.encode("1234567"))
+                .roles(Collections.singleton(UserRole.USER))
+                .build());
+
+        userRepo.save(user);
+
+        AuthRequest authRequest = new AuthRequest("Sa1ZeR_", "123456");
+
+        mockMvc.perform(post("/api/auth/signin")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(authRequest)))
+                .andDo(print())
+                .andExpect(status().isUnauthorized())
+                .andReturn().getResponse().getContentAsString();
+    }
+
+    @Test
+    void auth_not_found() throws Exception {
+        var user = userRepo.save(User.builder()
+                .email("test@mail.ru")
+                .login("Sa1ZeR_")
+                .password(passwordEncoder.encode("1234567"))
+                .roles(Collections.singleton(UserRole.USER))
+                .build());
+
+        userRepo.save(user);
+
+        AuthRequest authRequest = new AuthRequest("TEST", "123456");
+
+        mockMvc.perform(post("/api/auth/signin")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(authRequest)))
+                .andDo(print())
+                .andExpect(status().isNotFound())
+                .andReturn().getResponse().getContentAsString();
+    }
+
+    @Test
     void signup() throws Exception {
         SignupRequest request = new SignupRequest("Sa1ZeR_", "test@mail.ru", "123456");
 
@@ -77,5 +119,23 @@ class AuthControllerTest {
                         .content(mapper.writeValueAsString(request)))
                 .andDo(print())
                 .andExpect(status().is2xxSuccessful());
+    }
+
+    @Test
+    void signup_exist() throws Exception {
+        var user = userRepo.save(User.builder()
+                .email("test@mail.ru")
+                .login("Sa1ZeR_")
+                .password(passwordEncoder.encode("1234567"))
+                .roles(Collections.singleton(UserRole.USER))
+                .build());
+
+        SignupRequest request = new SignupRequest("Sa1ZeR_", "test@mail.ru", "123456");
+
+        mockMvc.perform(post("/api/auth/signup")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(request)))
+                .andDo(print())
+                .andExpect(status().isBadRequest());
     }
 }
